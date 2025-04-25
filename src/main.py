@@ -1,21 +1,21 @@
 import argparse
 import json
 from typing import Tuple, List
+import os
 
 import cv2
 import editdistance
-from path import Path
+from pathlib import Path
 
 from dataloader_iam import DataLoaderIAM, Batch
 from model import Model, DecoderType
 from preprocessor import Preprocessor
 
-
 class FilePaths:
     """Filenames and paths to data."""
-    fn_char_list = '../model/charList.txt'
-    fn_summary = '../model/summary.json'
-    fn_corpus = '../data/corpus.txt'
+    fn_char_list = '/content/drive/MyDrive/SimpleHTR/model/charList.txt'
+    fn_summary = '/content/drive/MyDrive/SimpleHTR/model/summary.json'
+    fn_corpus = '/content/drive/MyDrive/SimpleHTR/data/corpus.txt'
 
 
 def get_img_height() -> int:
@@ -135,16 +135,16 @@ def validate(model: Model, loader: DataLoaderIAM, line_mode: bool) -> Tuple[floa
 
 def infer(model: Model, fn_img: Path) -> None:
     """Recognizes text in image provided by file path."""
-    img = cv2.imread(fn_img, cv2.IMREAD_GRAYSCALE)
+    img = cv2.imread(str(fn_img), cv2.IMREAD_GRAYSCALE)
     assert img is not None
 
     preprocessor = Preprocessor(get_img_size(), dynamic_width=True, padding=16)
     img = preprocessor.process_img(img)
 
     batch = Batch([img], None, 1)
-    recognized, probability = model.infer_batch(batch, True)
+    recognized, accuracy = model.infer_batch(batch, True)
     print(f'Recognized: "{recognized[0]}"')
-    print(f'Probability: {probability[0]}')
+    print(f'accuracy: {accuracy[0]}')
 
 
 def parse_args() -> argparse.Namespace:
@@ -169,6 +169,7 @@ def main():
 
     # parse arguments and set CTC decoder
     args = parse_args()
+
     decoder_mapping = {'bestpath': DecoderType.BestPath,
                        'beamsearch': DecoderType.BeamSearch,
                        'wordbeamsearch': DecoderType.WordBeamSearch}
@@ -202,7 +203,8 @@ def main():
     # infer text on test image
     elif args.mode == 'infer':
         model = Model(char_list_from_file(), decoder_type, must_restore=True, dump=args.dump)
-        infer(model, args.img_file)
+        print(args.img_file)
+        infer(model, os.path.join('/content/drive/MyDrive/SimpleHTR/data',args.img_file))
 
 
 if __name__ == '__main__':
